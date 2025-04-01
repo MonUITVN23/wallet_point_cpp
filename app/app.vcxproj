@@ -135,14 +135,17 @@
     <ClCompile Include="lib\sqlite3.c" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="otp_utils.cpp" />
+    <ClCompile Include="transactionManager.cpp" />
+    <ClCompile Include="userDatabase.cpp" />
     <ClCompile Include="userManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\cotp.h" />
-    <ClInclude Include="include\cotp.hpp" />
-    <ClInclude Include="include\otpuri.h" />
     <ClInclude Include="include\sqlite3.h" />
     <ClInclude Include="otp_utils.h" />
+    <ClInclude Include="transactionManager.h" />
+    <ClInclude Include="user.h" />
+    <ClInclude Include="userDatabase.h" />
     <ClInclude Include="userManager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

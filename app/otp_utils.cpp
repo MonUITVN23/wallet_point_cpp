@@ -15,14 +15,14 @@ using namespace std;
 static const int32_t SHA1_BYTES = 160 / 8;
 
 int hmac_algo_sha1(const char* key, int key_length, const char* input, char* output) {
-    unsigned int len = SHA1_BYTES; // SHA1 produces a 20-byte hash
+	unsigned int len = SHA1_BYTES;
 
 	unsigned char* result = HMAC(
-		EVP_sha1(),							// algorithm
-		(unsigned char*)key, key_length,	// key
-		(unsigned char*)input, 8,		// data
-		(unsigned char*)output,				// output
-		&len								// output length
+		EVP_sha1(),							
+		(unsigned char*)key, key_length,	
+		(unsigned char*)input, 8,		
+		(unsigned char*)output,				
+		&len
 	);
 
 	// Return the HMAC success
