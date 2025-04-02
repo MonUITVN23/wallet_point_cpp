@@ -9,9 +9,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	ProjectSection(SolutionItems) = preProject
 		app\lib\cotp.c = app\lib\cotp.c
 		app\include\cotp.h = app\include\cotp.h
-		app\include\cotp.hpp = app\include\cotp.hpp
-		app\lib\otpuri.c = app\lib\otpuri.c
-		app\include\otpuri.h = app\include\otpuri.h
 		app\lib\sqlite3.c = app\lib\sqlite3.c
 		app\include\sqlite3.h = app\include\sqlite3.h
 	EndProjectSection

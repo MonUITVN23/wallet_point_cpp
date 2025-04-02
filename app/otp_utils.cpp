@@ -3,8 +3,6 @@
 #include <chrono>
 #include <cstring>
 
-#include "cotp.hpp"
-
 extern "C"
 {
 #include <openssl/evp.h>
