@@ -1,72 +1,128 @@
-User Management & Wallet System
-This project implements a complete user management system with wallet functionality. It provides features for user registration, login with OTP-based verification, admin-driven pending changes that require confirmation, wallet management, and transaction recording.
-Overview
-•	User Management:
-Users can register, log in, and update their profile (name, phone number). Password changes and profile updates require OTP confirmation for added security.
-•	Admin Functionality:
-Administrators (managers) can create user accounts with a system-generated password. They can also update other users’ information. Updates made on behalf of users are stored as pending changes until confirmed via OTP.
-•	OTP Authentication:
-OTP codes are generated using the TOTP algorithm with OpenSSL’s HMAC-SHA1 implementation. The OTP is used for sensitive operations such as fund transfers, password changes, and confirming pending profile updates.
-•	Wallet & Transaction Management:
-Each user is associated with a wallet where they receive initial points during account creation. The wallet manager provides functionality for checking balances, transferring points between wallets, and recording transactions.
-•	Backup & Database:
-The application uses SQLite to store users, wallets, and pending change information. An automatic backup feature is included to save a copy of the user database.
-Features
-•	Registration:
-•	Standard registration for new users.
-•	Admin-led registration for creating new user accounts with auto-generated passwords.
-•	Login & Security:
-•	Password authentication (using SHA-256 hashed passwords).
-•	Mandatory password change when flagged.
-•	OTP verification for profile updates and fund transfers.
-•	Pending change display during login for user confirmation.
-•	Wallet Management:
-•	Creation of a dedicated wallet for each user.
-•	Point-based transactions between users.
-•	Master wallet deduction when funds are allocated.
-•	Admin Menus:
-•	Manage home accounts.
-•	Update user information (with OTP-based pending change confirmation).
-•	Change personal passwords.
-Requirements
-•	C++20 compiler (Visual Studio recommended)
-•	SQLite3 library for database operations
-•	OpenSSL library for OTP functionality
-•	Standard C++ libraries
-Build Instructions
-1.	Clone the Repository:
-Clone this repository onto your local machine.
-2.	Dependencies:
-Ensure SQLite3 and OpenSSL libraries are installed and correctly linked in your Visual Studio project settings.
-3.	Compile:
-Open the solution in Visual Studio and build the project. The project is configured to use C++20 features.
-Usage Instructions
-1.	Run the Application:
-Execute the compiled binary. The interface will be displayed in the integrated console.
-2.	User Flows:
-•	Registration:
-•	Choose the registration option and follow prompts for account details.
-•	Login:
-•	Input username and password. If any pending change exists, the new details are displayed and an OTP is requested.
-•	Admin Functions:
-•	Managers can create new user accounts, update user details, and execute wallet-based operations.
-•	Wallet Transactions:
-•	Use the interface for transferring points and viewing transaction history.
-3.	OTP Verification:
-The system displays a one-time password in the console. Enter that OTP to confirm sensitive operations.
-Project Structure
-•	app/userManager.cpp:
-Contains the implementation for user-related functionalities including registration, login, OTP generation/verification, and admin/user menus.
-•	app/userDatabase.cpp:
-Manages user storage, password hashing, pending changes, backups, and SQLite database interactions.
-•	app/walletManager.cpp:
-Implements wallet creation, balance management, point transfers, and integration with SQLite.
-•	app/otp_utils.cpp:
-Provides functions for generating and verifying OTP using OpenSSL’s HMAC-SHA1 and current system time.
-•	Other Files:
-Additional project's header files, transaction manager, and utility modules are included as needed.
-Notes
-•	The system is primarily developed in Vietnamese and English. Prompts and messages may appear in Vietnamese.
-•	OTP generation uses the TOTP algorithm with a hard-coded secret key (configurable as needed for production).
-•	The application includes a backup mechanism to duplicate the SQLite database to a specified directory.
---------------------------------------------------
+# User Management & Wallet System 🚀
+
+Một ứng dụng C++20 triển khai hệ thống quản lý người dùng với ví điện tử và các tính năng bảo mật dựa trên OTP. Hệ thống hỗ trợ đăng ký, đăng nhập, giao dịch ví và sao lưu cơ sở dữ liệu bằng SQLite.
+
+## ✨ Tính năng chính
+
+### 👤 Quản lý người dùng
+
+* **Đăng ký:**
+    * Đăng ký tiêu chuẩn cho người dùng mới.
+    * Đăng ký do quản trị viên thực hiện (với mật khẩu tự động tạo).
+* **Đăng nhập:**
+    * Xác thực mật khẩu và **xác minh OTP**.
+    * Xử lý các thay đổi hồ sơ **đang chờ xử lý** (pending) khi đăng nhập (yêu cầu xác nhận OTP).
+* **Cập nhật hồ sơ:**
+    * Người dùng tự cập nhật thông tin ngay lập tức.
+    * Thay đổi do quản trị viên thực hiện yêu cầu người dùng xác nhận qua OTP (trạng thái **pending**).
+* **Quản lý mật khẩu:**
+    * Thay đổi mật khẩu yêu cầu **xác minh OTP**.
+    * Buộc thay đổi mật khẩu đối với tài khoản được đánh dấu.
+
+### 💼 Quản lý ví
+
+* Số dư ví ban đầu khi đăng ký (ví dụ: 1000 điểm).
+* Chuyển tiền giữa người dùng với **xác nhận OTP**.
+* Lưu trữ và xem lịch sử giao dịch.
+
+### 🔒 Bảo mật
+
+* **Tạo & Xác minh OTP:** Sử dụng thuật toán `TOTP` (HMAC-SHA1 của OpenSSL).
+* **Băm mật khẩu:** Sử dụng `SHA-256`.
+* Mọi thao tác nhạy cảm đều yêu cầu **xác minh OTP**.
+
+### 🗄️ Cơ sở dữ liệu & Sao lưu
+
+* Lưu trữ dữ liệu người dùng, ví, và các thay đổi **đang chờ xử lý** trong `SQLite`.
+* Tính năng sao lưu cơ sở dữ liệu tự động.
+
+## 📂 Cấu trúc tệp quan trọng
+
+app/
+├── Header Files/
+│   ├── cotp.h
+│   ├── otp_utils.h
+│   ├── sqlite3.h
+│   ├── transactionManager.h
+│   ├── user.h
+│   ├── userDatabase.h
+│   ├── userManager.h
+│   └── walletManager.h
+└── Source Files/
+    ├── cotp.cpp
+    ├── main.cpp
+    ├── otp_utils.cpp
+    ├── sqlite3.c
+    ├── transactionManager.cpp
+    ├── userDatabase.cpp
+    ├── userManager.cpp
+    └── walletManager.cpp
+
+## 🛠️ Yêu cầu xây dựng
+
+* Trình biên dịch `C++20` (Khuyến nghị Visual Studio).
+* Thư viện `SQLite3`.
+* Thư viện `OpenSSL`.
+* Thư viện C++ chuẩn.
+
+## ⚙️ Hướng dẫn xây dựng
+
+1.  **Clone Repository:**
+    ```bash
+    git clone <your-repository-url>
+    cd <repository-directory>
+    ```
+2.  **Cài đặt Dependencies:**
+    * Đảm bảo `SQLite3` và `OpenSSL` đã được cài đặt.
+    * Cấu hình đường dẫn thư viện và include trong môi trường/IDE của bạn (ví dụ: Visual Studio Project Properties).
+3.  **Biên dịch dự án:**
+    * Mở solution/project bằng IDE (Visual Studio, etc.) được cấu hình với `C++20`.
+    * Build dự án (Compile & Link).
+
+## 🚀 Hướng dẫn sử dụng
+
+1.  **Chạy ứng dụng:** Thực thi file chạy đã biên dịch. Menu chính sẽ xuất hiện trên console.
+2.  **Đăng ký người dùng:**
+    * Người dùng tự đăng ký: Nhập username, password, full name, phone number.
+    * Admin đăng ký hộ: Admin cung cấp thông tin, mật khẩu tự tạo, người dùng phải đổi mật khẩu khi đăng nhập lần đầu.
+3.  **Đăng nhập & Xử lý Pending Changes:**
+    * Nhập username và password.
+    * Nếu có thay đổi **đang chờ xử lý** từ admin:
+        * Hệ thống hiển thị thông tin mới (pending):
+            ```
+            New Full Name: [Tên mới đang chờ]
+            New Phone Number: [Số điện thoại mới đang chờ]
+            ```
+        * Nhập OTP để **xác nhận** (áp dụng thay đổi) hoặc **từ chối** (hủy thay đổi).
+    * Nếu không có pending changes hoặc đã xử lý xong, đăng nhập thành công sau khi xác minh OTP (nếu là lần đăng nhập chuẩn).
+4.  **Ví & Giao dịch:** Truy cập menu ví để xem số dư, lịch sử, và thực hiện chuyển tiền (yêu cầu **OTP**).
+5.  **Cập nhật Hồ sơ & Mật khẩu:**
+    * Tự cập nhật: Thay đổi được áp dụng ngay.
+    * Admin cập nhật hộ: Thay đổi chuyển sang trạng thái **pending**.
+    * Đổi mật khẩu: Luôn yêu cầu **OTP**.
+
+## 📝 Luồng công việc ví dụ
+
+1.  **User A đăng ký:** Nhận 1000 điểm vào ví.
+2.  **Admin cập nhật** tên và số điện thoại cho User A. Thay đổi này ở trạng thái **pending**.
+3.  **User A đăng nhập:**
+    * Nhập username/password.
+    * Hệ thống báo có pending changes và hiển thị thông tin mới.
+    * User A nhập OTP.
+    * Nếu OTP đúng, hồ sơ được cập nhật. Nếu sai, thay đổi bị hủy.
+    * User A tiếp tục vào menu chính.
+
+## 📌 Ghi chú
+
+* Khóa bí mật OTP (`OTP secret key`) hiện đang được định nghĩa trong `app/userManager.cpp`. Cân nhắc chuyển ra file cấu hình hoặc biến môi trường để bảo mật tốt hơn.
+* Ứng dụng hỗ trợ song ngữ: **Tiếng Việt** và **Tiếng Anh**.
+* Sao lưu cơ sở dữ liệu tự động giúp đảm bảo an toàn dữ liệu.
+
+## 📄 Giấy phép
+
+Dự án này được cấp phép theo [Giấy phép MIT](LICENSE). (Hãy chắc chắn bạn có file `LICENSE` trong repo).
+
+## 📫 Liên hệ
+
+Nếu có vấn đề hoặc cần trao đổi thêm, vui lòng liên hệ: `[Tên hoặc Email của bạn]`
+Hoặc tạo một [Issue](link-tới-trang-issues-github-của-bạn) trên GitHub.
