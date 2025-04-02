@@ -59,6 +59,8 @@ app/
 │   ├── userManager.cpp
 │   └── walletManager.cpp
 
+```
+
 ## 🛠️ Yêu cầu xây dựng
 
 * Trình biên dịch `C++20` (Khuyến nghị Visual Studio).
