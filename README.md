@@ -38,25 +38,26 @@ Một ứng dụng C++20 triển khai hệ thống quản lý người dùng v�
 
 ## 📂 Cấu trúc tệp quan trọng
 
+```plaintext
 app/
 ├── Header Files/
 │   ├── cotp.h
-│   ├── otp_utils.h
-│   ├── sqlite3.h
-│   ├── transactionManager.h
-│   ├── user.h
-│   ├── userDatabase.h
-│   ├── userManager.h
-│   └── walletManager.h
-└── Source Files/
-    ├── cotp.cpp
-    ├── main.cpp
-    ├── otp_utils.cpp
-    ├── sqlite3.c
-    ├── transactionManager.cpp
-    ├── userDatabase.cpp
-    ├── userManager.cpp
-    └── walletManager.cpp
+│   ├── otp_utils.h         # Tiện ích OTP
+│   ├── sqlite3.h           # Thư viện SQLite
+│   ├── transactionManager.h # Quản lý giao dịch
+│   ├── user.h              # Định nghĩa User
+│   ├── userDatabase.h      # Tương tác DB
+│   ├── userManager.h       # Quản lý User
+│   └── walletManager.h     # Quản lý Ví
+├── Source Files/
+│   ├── cotp.cpp
+│   ├── main.cpp            # Điểm vào ứng dụng
+│   ├── otp_utils.cpp
+│   ├── sqlite3.c
+│   ├── transactionManager.cpp
+│   ├── userDatabase.cpp
+│   ├── userManager.cpp
+│   └── walletManager.cpp
 
 ## 🛠️ Yêu cầu xây dựng
 
@@ -117,12 +118,3 @@ app/
 * Khóa bí mật OTP (`OTP secret key`) hiện đang được định nghĩa trong `app/userManager.cpp`. Cân nhắc chuyển ra file cấu hình hoặc biến môi trường để bảo mật tốt hơn.
 * Ứng dụng hỗ trợ song ngữ: **Tiếng Việt** và **Tiếng Anh**.
 * Sao lưu cơ sở dữ liệu tự động giúp đảm bảo an toàn dữ liệu.
-
-## 📄 Giấy phép
-
-Dự án này được cấp phép theo [Giấy phép MIT](LICENSE). (Hãy chắc chắn bạn có file `LICENSE` trong repo).
-
-## 📫 Liên hệ
-
-Nếu có vấn đề hoặc cần trao đổi thêm, vui lòng liên hệ: `[Tên hoặc Email của bạn]`
-Hoặc tạo một [Issue](link-tới-trang-issues-github-của-bạn) trên GitHub.
