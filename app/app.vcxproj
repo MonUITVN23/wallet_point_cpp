@@ -138,6 +138,7 @@
     <ClCompile Include="transactionManager.cpp" />
     <ClCompile Include="userDatabase.cpp" />
     <ClCompile Include="userManager.cpp" />
+    <ClCompile Include="walletManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\cotp.h" />
@@ -147,6 +148,7 @@
     <ClInclude Include="user.h" />
     <ClInclude Include="userDatabase.h" />
     <ClInclude Include="userManager.h" />
+    <ClInclude Include="walletManager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

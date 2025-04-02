@@ -1,10 +1,12 @@
 ﻿#include "userManager.h"
 #include <cstdlib>
 
-#define SECRET_KEY "JBSWY3DPEHPK3PXP"
+#define SECRET_KEY "JBSWY3DPEHPK3PXP" //Có thể ẩn đi theo yêu cầu bảo mật
 
 UserManager::UserManager() {
     userDatabase = make_unique<UserDatabase>();
+    walletManager = make_unique<WalletManager>();
+	transactionManager = make_unique<TransactionManager>();
 	userDatabase->backupDatabase("data/backup/users.db");
 }
 
@@ -15,13 +17,13 @@ string UserManager::generatePassword() {
     const string chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     const int length = 8;
 
-    random_device rd;                      // Thu thập dữ liệu ngẫu nhiên từ hệ thống
-    mt19937 generator(rd());                // Khởi tạo bộ sinh số ngẫu nhiên
-    uniform_int_distribution<int> dist(0, chars.size() - 1); // Tạo khoảng phân phối hợp lệ
+    random_device rd;                      
+    mt19937 generator(rd());                
+    uniform_int_distribution<int> dist(0, chars.size() - 1); 
 
     string password;
     for (int i = 0; i < length; ++i) {
-        password += chars[dist(generator)]; // Lấy ký tự ngẫu nhiên từ tập `chars`
+        password += chars[dist(generator)]; 
     }
 
     return password;
@@ -30,7 +32,7 @@ string UserManager::generatePassword() {
 void UserManager::generateOTP() {
     char otp[7] = { 0 };
     OTPData data;
-    totp_new(&data, SECRET_KEY, hmac_algo_sha1, getCurrentTime, 6, 45);
+    totp_new(&data, SECRET_KEY, hmac_algo_sha1, getCurrentTime, 6, 30);
     totp_now(&data, otp);
     cout << "Ma OTP cua ban la: " << otp << endl;
     getCurrentTime();
@@ -39,7 +41,7 @@ void UserManager::generateOTP() {
 bool UserManager::verifyOTP(const string& userOTP) {
     char otp[7] = { 0 };
     OTPData data;
-    totp_new(&data, SECRET_KEY, hmac_algo_sha1, getCurrentTime, 6, 45);
+    totp_new(&data, SECRET_KEY, hmac_algo_sha1, getCurrentTime, 6, 30);
     totp_now(&data, otp);
     cout << "Xin moi nhap OTP: " << userOTP << endl;
     getCurrentTime();
@@ -49,6 +51,7 @@ bool UserManager::verifyOTP(const string& userOTP) {
 void UserManager::registerUser() {
     system("cls");
     string username, password, fullName, phoneNumber;
+	int amount = 1000;
 
     cout << "\nDANG KY NGUOI DUNG" << endl;
     cout << "Nhap ten nguoi dung: ";
@@ -63,20 +66,40 @@ void UserManager::registerUser() {
     cin >> password;
 
     cout << "Nhap ho va ten: ";
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');  // Đảm bảo xóa bộ đệm trước khi getline
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
     getline(cin, fullName);
 
-    cout << "Nhap so dien thoai: ";
-    cin >> phoneNumber;
+    regex phonePattern("^0\\d{9}$");
+    do {
+        cout << "Nhap so dien thoai: ";
+        getline(cin, phoneNumber);
+        if (!regex_match(phoneNumber, phonePattern))
+            cout << "So dien thoai khong dung dinh dang! Vui long nhap lai." << endl;
+        else
+            break;
+    } while (true);
 
     userDatabase->addUser(username, password, "user", fullName, phoneNumber, 0);
 
-    cout << "Dang ky thanh cong!" << endl;
+    if (!walletManager->deductFromMaster(amount)) {
+        cout << "Loi: So du vi tong khong du de cap diem cho nguoi dung moi." << endl;
+        return;
+    }
+
+    string walletId = walletManager->createWallet(username, amount); 
+
+    if (!walletId.empty()) {
+        cout << "Dang ky thanh cong! Ban co ngay 1000 diem!" << endl;
+    }
+    else {
+        cout << "Dang ky thanh cong! Nhung co loi khi tao vi." << endl;
+    }
 }
 
 void UserManager::registerUserForOthers() {
     system("cls");
     string username, password = generatePassword(), fullName, phoneNumber;
+	int amount = 1000;
 
     cout << "\nNHAN VIEN QUAN LY - TAO TAI KHOAN HO" << endl;
     cout << "Nhap ten nguoi dung moi: ";
@@ -88,13 +111,34 @@ void UserManager::registerUserForOthers() {
     }
 
     cout << "Nhap ho va ten: ";
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');  // Đảm bảo xóa bộ đệm trước khi getline
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');  
     getline(cin, fullName);
 
-    cout << "Nhap so dien thoai: ";
-    cin >> phoneNumber;
+    regex phonePattern("^0\\d{9}$");
+    do {
+        cout << "Nhap so dien thoai: ";
+        getline(cin, phoneNumber);
+        if (!regex_match(phoneNumber, phonePattern))
+            cout << "So dien thoai khong dung dinh dang! Vui long nhap lai." << endl;
+        else
+            break;
+    } while (true);
 
     userDatabase->addUser(username, password, "user", fullName, phoneNumber, 1);
+
+    if (!walletManager->deductFromMaster(amount)) {
+        cout << "Loi: So du vi tong khong du de cap diem cho nguoi dung moi." << endl;
+        return;
+    }
+
+    string walletId = walletManager->createWallet(username, amount);
+
+    if (!walletId.empty()) {
+        cout << "Ban da duoc cap 1000 diem. Wallet ID: " << walletId << endl;
+    }
+    else {
+        cout << "Dang ky thanh cong! Nhung co loi khi tao vi." << endl;
+    }
 
     cout << "Tao tai khoan thanh cong!\nMat khau: " << password << " (Bat buoc doi sau khi dang nhap)" << endl;
 }
@@ -109,7 +153,7 @@ User UserManager::loginUser() {
 
     if (!userDatabase->userExists(username)) {
         cout << "Nguoi dung khong ton tai!" << endl;
-        return User{};  // Trả về user rỗng nếu không tồn tại
+        return User{};  
     }
 
     User user = userDatabase->getUser(username);
@@ -125,6 +169,32 @@ User UserManager::loginUser() {
         return User{};
     }
 
+    if (userDatabase->hasPendingChange(username)) {
+		
+        system("cls");
+        auto [pendingFullName, pendingPhone] = userDatabase->getPendingChange(username);
+		cout << "Tai khoan cua ban co thay doi chua duoc xac nhan!" << endl;
+        cout << "Thong tin thay doi:" << endl;
+        cout << "Ho ten moi: " << pendingFullName << endl;
+        cout << "So dien thoai moi: " << pendingPhone << endl;
+		cout << "----------------------------" << endl;
+
+        generateOTP();
+        string pendingOTP;
+        cout << "\nNhap ma OTP de xac nhan thay doi (Canh bao: sai OTP thi thong tin se khong duoc cap nhat): ";
+        cin >> pendingOTP;
+        if (verifyOTP(pendingOTP)) {
+            userDatabase->confirmPendingChange(username);
+            cout << "Thay doi da duoc xac nhan!" << endl;
+            user = userDatabase->getUser(username);
+        }
+        else {
+            cout << "Ma OTP khong dung! Thay doi bi huy. Vui long thu lai sau." << endl;
+            userDatabase->rejectPendingChange(username);
+            return User{};
+        }
+    }
+
     cout << "Dang nhap thanh cong!" << endl;
 
     if (user.role == "manager") {
@@ -135,6 +205,47 @@ User UserManager::loginUser() {
     }
 
     return user;
+}
+
+void UserManager::transferFunds(const string& senderUsername) {
+    string receiverWalletId;
+    int amount;
+    cout << "Nhap vi nguoi nhan diem: ";
+    cin >> receiverWalletId;
+    cout << "Nhap so luong diem: ";
+    cin >> amount;
+
+    generateOTP();
+    string userOTP;
+    cout << "Xin moi nhap ma OTP de xac nhan giao dich: ";
+    cin >> userOTP;
+
+    if (!verifyOTP(userOTP)) {
+        cout << "OTP xac thuc khong thanh cong. Vui long thuc hien lai giao dich!" << endl;
+        return;
+    }
+
+    string senderWalletId = walletManager->getWalletIdByUsername(senderUsername);
+    if (senderWalletId.empty()) {
+        cout << "Khong tim thay thong tin vi!" << endl;
+    }
+    else {
+        bool success = walletManager->transferPoints(senderWalletId, receiverWalletId, amount);
+        string senderDisplay = userDatabase->getUser(senderUsername).fullName;
+        string receiverUsername = walletManager->getUsernameByWalletId(receiverWalletId);
+        string receiverDisplay = receiverUsername.empty()
+            ? "Unknown"
+            : userDatabase->getUser(receiverUsername).fullName;
+
+        cout << (success ? "Giao dich thanh cong!" : "Giao dich that bai!") << endl;
+        transactionManager->recordTransaction(senderWalletId, senderDisplay,
+            receiverWalletId, receiverDisplay,
+            amount, "Chuyen diem",
+            success ? "Thanh cong" : "That bai");
+    }
+    cout << "Press any key to continue..." << endl;
+    cin.ignore();
+    cin.get();
 }
 
 void UserManager::changePassword(const string& username) {
@@ -167,26 +278,63 @@ bool UserManager::loadUserInfo(const string& username, User& user) {
     return true;
 }
 
-void UserManager::updateUserInfo(const string& username, User& user) {
+void UserManager::updateUserInfo(const string& currentUsername, User& currentUser) {
+    string targetUsername;
+    if (currentUser.role == "manager") {
+        cout << "Nhap ten nguoi dung can cap nhat (nhap '0' de cap nhat thong tin cua ban): ";
+        cin >> targetUsername;
+        if (targetUsername == "0") {
+            targetUsername = currentUsername;
+        }
+    }
+    else {
+        targetUsername = currentUsername;
+    }
+
+    User targetUser = userDatabase->getUser(targetUsername);
+    if (targetUser.username.empty()) {
+        cout << "Nguoi dung khong ton tai!" << endl;
+        return;
+    }
+
     string newFullName, newPhoneNumber, userOTP;
-    cout << "Nhap ho ten moi: ";
+
+    cout << "Nhap ho ten moi (nhap '0' neu khong cap nhat): ";
     getline(cin >> ws, newFullName);
-    cout << "Nhap so dien thoai moi: ";
+
+    if (newFullName == "0") {
+        newFullName = targetUser.fullName;
+    }
+
+    cout << "Nhap so dien thoai moi (nhap '0' neu khong cap nhat): ";
     getline(cin, newPhoneNumber);
+
+    if (newPhoneNumber == "0") {
+        newPhoneNumber = targetUser.phoneNumber;
+    }
+
+    else if (!newPhoneNumber.empty()) {
+        regex phonePattern("^0\\d{9}$");
+        while (!regex_match(newPhoneNumber, phonePattern)) {
+            cout << "So dien thoai khong dung dinh dang! Vui long nhap lai (hoac nhan Enter de bo qua): ";
+            getline(cin, newPhoneNumber);
+            if (newPhoneNumber.empty())
+                break;
+        }
+    }
 
     generateOTP();
     cout << "Nhap ma OTP de xac nhan: ";
     cin >> userOTP;
 
     if (verifyOTP(userOTP)) {
-        
-        userDatabase->updateUserInfo(username, newFullName, newPhoneNumber);
-
-        cout << "Cap nhat thong tin thanh cong!" << endl;
-
-        
-        if (loadUserInfo(username, user)) {
-            cout << "Thong tin moi: " << user.fullName << " - " << user.phoneNumber << endl;
+        if (currentUser.role == "manager" && targetUsername != currentUsername) {
+            userDatabase->addPendingChange(targetUsername, newFullName, newPhoneNumber);
+            cout << "Cap nhat thong tin thanh cong! Thay doi se co hieu luc sau khi xac nhan." << endl;
+        }
+        else {
+            userDatabase->updateUserInfo(targetUsername, newFullName, newPhoneNumber);
+            cout << "Cap nhat thong tin thanh cong!" << endl;
         }
     }
     else {
@@ -203,14 +351,17 @@ void UserManager::showManagerMenu(const string& username) {
 
     int choice;
     do {
+        int balance = walletManager->getBalance("000000");
         cout << "\n=== MENU QUAN LY ===" << endl;
         cout << "Ho va ten: " << manager.fullName << endl;
         cout << "So dien thoai: " << manager.phoneNumber << endl;
+        cout << "So du vi tong: " << balance << " diem" << endl;
         cout << "Vai tro: Quan tri vien" << endl;
         cout << "----------------------------" << endl;
         cout << "1. Tao tai khoan ho" << endl;
         cout << "2. Doi mat khau" << endl;
-        cout << "3. Dang xuat" << endl;
+        cout << "3. Cap nhat thong tin nguoi dung" << endl;
+        cout << "4. Dang xuat" << endl;
         cout << "Chon: ";
         cin >> choice;
 
@@ -220,34 +371,45 @@ void UserManager::showManagerMenu(const string& username) {
             break;
         case 2:
             changePassword(manager.username);
+            manager = userDatabase->getUser(username);
             break;
         case 3:
+            updateUserInfo(username, manager);
+            manager = userDatabase->getUser(username);
+            break;
+        case 4:
             cout << "Dang xuat thanh cong!" << endl;
+			system("cls");
             return;
         default:
             cout << "Lua chon khong hop le!" << endl;
         }
-    } while (choice != 3);
+    } while (choice != 4);
 }
 
 void UserManager::showUserMenu(const string& username) {
     User user = userDatabase->getUser(username);
-
     int choice;
     do {
-        system("cls");  // Nếu dùng Linux/Mac, thay bằng system("clear");
+        system("cls");
+        int balance = walletManager->getBalanceByUsername(username);
+	    string walletid = walletManager->getWalletIdByUsername(username);
         cout << "\n=== MENU NGUOI DUNG ===" << endl;
         cout << "Ho va ten: " << user.fullName << endl;
         cout << "So dien thoai: " << user.phoneNumber << endl;
+		cout << "So tai khoan: " << walletid  << endl;
+        cout << "So du: " << balance << " diem" << endl;
         cout << "Vai tro: " << user.role << endl;
         cout << "----------------------------" << endl;
         cout << "1. Doi mat khau" << endl;
         cout << "2. Thay doi thong tin" << endl;
-        cout << "3. Dang xuat" << endl;
+        cout << "3. Xem lich su giao dich" << endl;
+        cout << "4. Chuyen diem" << endl;
+        cout << "5. Dang xuat" << endl;
         cout << "Chon: ";
         cin >> choice;
 
-        if (cin.fail()) {  // Xử lý lỗi nhập sai
+        if (cin.fail()) {  
             cin.clear();
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
             cout << "Lua chon khong hop le! Vui long nhap lai." << endl;
@@ -257,17 +419,33 @@ void UserManager::showUserMenu(const string& username) {
         switch (choice) {
         case 1:
             changePassword(user.username);
-            user = userDatabase->getUser(username);  // Cập nhật lại thông tin sau khi đổi mật khẩu
+            user = userDatabase->getUser(username);  
             break;
         case 2:
-            updateUserInfo(user.username, user);
-            user = userDatabase->getUser(username);  // Cập nhật lại thông tin sau khi thay đổi thông tin
+            updateUserInfo(username, user);
+            user = userDatabase->getUser(username);
             break;
-        case 3:
+        case 3: {
+            string walletId = walletManager->getWalletIdByUsername(username);
+            vector<string> history = transactionManager->getTransactionHistory(walletId);
+            cout << "\n--- Lich su giao dich ---" << endl;
+            for (const auto& record : history) {
+                cout << record << endl;
+            }
+            cout << "Nhan phim bat ky de tiep tuc..." << endl;
+            cin.ignore(); cin.get();
+            break;
+        }
+        case 4: {
+            transferFunds(user.username);
+            break;
+        }
+        case 5:
             cout << "Dang xuat thanh cong!" << endl;
+			system("cls");
             return;
         default:
             cout << "Lua chon khong hop le!" << endl;
         }
-    } while (choice != 3);
+    } while (choice != 5);
 }

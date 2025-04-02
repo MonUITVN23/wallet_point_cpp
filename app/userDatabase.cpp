@@ -21,6 +21,15 @@ void UserDatabase::initializeDatabase() {
         "phoneNumber TEXT, "
         "mustChangePassword INTEGER DEFAULT 0);";
     sqlite3_exec(db, sql.c_str(), nullptr, nullptr, nullptr);
+
+    string sqlPending = "CREATE TABLE IF NOT EXISTS pending_changes ("
+        "username TEXT PRIMARY KEY, "
+        "newFullName TEXT, "
+        "newPhoneNumber TEXT, "
+        "status TEXT DEFAULT 'pending', "
+        "FOREIGN KEY(username) REFERENCES users(username));";
+    sqlite3_exec(db, sqlPending.c_str(), nullptr, nullptr, nullptr);
+
     string checkAdminSql = "SELECT COUNT(*) FROM users WHERE role='manager';";
     sqlite3_stmt* stmt;
     sqlite3_prepare_v2(db, checkAdminSql.c_str(), -1, &stmt, 0);
@@ -178,4 +187,77 @@ void UserDatabase::startAutomaticBackup(const string& backupPath, int intervalSe
             backupDatabase(backupPath);
         }
         }).detach();
+}
+
+void UserDatabase::addPendingChange(const string& username, const string& newFullName, const string& newPhoneNumber) {
+    string sql = "INSERT OR REPLACE INTO pending_changes (username, newFullName, newPhoneNumber, status) VALUES (?, ?, ?, 'pending');";
+    sqlite3_stmt* stmt;
+    if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) == SQLITE_OK) {
+        sqlite3_bind_text(stmt, 1, username.c_str(), -1, SQLITE_STATIC);
+        sqlite3_bind_text(stmt, 2, newFullName.c_str(), -1, SQLITE_STATIC);
+        sqlite3_bind_text(stmt, 3, newPhoneNumber.c_str(), -1, SQLITE_STATIC);
+        if (sqlite3_step(stmt) != SQLITE_DONE) {
+            cerr << "Error adding pending change: " << sqlite3_errmsg(db) << endl;
+        }
+        sqlite3_finalize(stmt);
+    }
+}
+
+tuple<string, string> UserDatabase::getPendingChange(const string& username) {
+    string sql = "SELECT newFullName, newPhoneNumber FROM pending_changes WHERE username = ? AND status = 'pending';";
+    sqlite3_stmt* stmt;
+    string pendingFullName, pendingPhone;
+    if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) == SQLITE_OK) {
+        sqlite3_bind_text(stmt, 1, username.c_str(), -1, SQLITE_STATIC);
+        if (sqlite3_step(stmt) == SQLITE_ROW) {
+            pendingFullName = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+            pendingPhone = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+        }
+        sqlite3_finalize(stmt);
+    }
+    return std::make_tuple(pendingFullName, pendingPhone);
+}
+
+bool UserDatabase::hasPendingChange(const string& username) {
+    string sql = "SELECT COUNT(*) FROM pending_changes WHERE username = ? AND status = 'pending';";
+    sqlite3_stmt* stmt;
+    int count = 0;
+    if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) == SQLITE_OK) {
+        sqlite3_bind_text(stmt, 1, username.c_str(), -1, SQLITE_STATIC);
+        if (sqlite3_step(stmt) == SQLITE_ROW) {
+            count = sqlite3_column_int(stmt, 0);
+        }
+        sqlite3_finalize(stmt);
+    }
+    return count > 0;
+}
+
+void UserDatabase::confirmPendingChange(const string& username) {
+    string sql = "SELECT newFullName, newPhoneNumber FROM pending_changes WHERE username = ?;";
+    sqlite3_stmt* stmt;
+    if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) == SQLITE_OK) {
+        sqlite3_bind_text(stmt, 1, username.c_str(), -1, SQLITE_STATIC);
+        if (sqlite3_step(stmt) == SQLITE_ROW) {
+            string newFullName = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 0));
+            string newPhoneNumber = reinterpret_cast<const char*>(sqlite3_column_text(stmt, 1));
+            updateUserInfo(username, newFullName, newPhoneNumber);
+        }
+        sqlite3_finalize(stmt);
+    }
+    sql = "UPDATE pending_changes SET status = 'confirmed' WHERE username = ?;";
+    if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) == SQLITE_OK) {
+        sqlite3_bind_text(stmt, 1, username.c_str(), -1, SQLITE_STATIC);
+        sqlite3_step(stmt);
+        sqlite3_finalize(stmt);
+    }
+}
+
+void UserDatabase::rejectPendingChange(const string& username) {
+    string sql = "DELETE FROM pending_changes WHERE username = ?;";
+    sqlite3_stmt* stmt;
+    if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) == SQLITE_OK) {
+        sqlite3_bind_text(stmt, 1, username.c_str(), -1, SQLITE_STATIC);
+        sqlite3_step(stmt);
+        sqlite3_finalize(stmt);
+    }
 }

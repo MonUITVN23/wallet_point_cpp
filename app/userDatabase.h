@@ -32,10 +32,16 @@ public:
     void updateUserInfo(const string& username, const string& fullName, const string& phoneNumber);
 
     string hashPassword(const string& password);
-    bool verifyPassword(const string& inputPassword, const string& storedHashedPassword); // Hàm xác thực mật khẩu
+    bool verifyPassword(const string& inputPassword, const string& storedHashedPassword); 
 
     void backupDatabase(const string& backupPath);
     void startAutomaticBackup(const string& backupPath, int intervalSeconds);
+
+    void addPendingChange(const string& username, const string& newFullName, const string& newPhoneNumber);
+    tuple<string, string> getPendingChange(const string& username);
+    bool hasPendingChange(const string& username);
+    void confirmPendingChange(const string& username);
+    void rejectPendingChange(const string& username);
 };
 
 #endif
